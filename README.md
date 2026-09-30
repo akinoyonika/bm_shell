@@ -1,6 +1,6 @@
 # bm_shell - ビットマップ転送型リモートシェルサーバー
 
-<div style="text-align:right">2026年9月25日</div>
+<div style="text-align:right">2026年9月30日</div>
 
 ## 概要
 
@@ -19,9 +19,14 @@ SSH [RFC 4250, RFC 4251, RFC 4253, RFC 4254, RFC 4255, RFC 4256]と異なる点�
 
 本ソフトウェアはaソースパッケージにて提供しています。以下をダウンロードしてください。
 
-- [bm_shell.20260925.tar.gz](http://akino-yo.f5.si/akinoyonika/bm_shell/bm_shell.20260925.tar.gz)
+- [bm_shell.20260930.tar.gz](http://akino-yo.f5.si/akinoyonika/bm_shell/bm_shell.20260930.tar.gz)
 
 <details><summary>変更履歴</summary>
+
+bm_shell.20260930.tar.gz
+: <ul>
+    <li>ドキュメントをわずかに修正。</li>
+  </ul>
 
 bm_shell.20260925.tar.gz
 : <ul>
@@ -42,7 +47,7 @@ bm_shell.20260925.tar.gz
 $ sudo apt install build-essential libvterm-dev libfreetype-dev libfontconfig1-dev libsdl2-dev expect
 ```
 
-次に[espress_stream](http://akino-yo.f5.si/akinoyonika/espress_stream/)とそのサンプルアプリケーション<tt>es_gw</tt>と<tt>es_ccat</tt>の導入を行っておいてください。
+さらに、事前に[espress_stream](http://akino-yo.f5.si/akinoyonika/espress_stream/)とそのサンプルアプリケーション<tt>es_gw</tt>と<tt>es_ccat</tt>の導入を行ってください。
 
 最初に適当なディレクトリでパッケージの展開を行っておいてください。
 
@@ -186,7 +191,7 @@ linuxのGUI環境で動作するbm_termは実用的ではありません。
 : 結合するアドレス("<tt>nnn.nnn.nnn</tt>" or "<tt>xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx%ifname</tt>")を指定する。 (デフォルト: 任意)
 
 <tt>-p \<bind port\></tt>
-: 結合するポート番号を指定する。 (デフォルト値: "<tt>12345</tt>)
+: 結合するポート番号を指定する。 (デフォルト値: "<tt>12345</tt>")
 
 ### <tt>bm_term [-4 | -6] [-a \<destination address\> [-p \<destination port\>] [-b \<bind address\>] [-q \<bind port\>]</tt>
 
