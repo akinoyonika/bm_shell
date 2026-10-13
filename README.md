@@ -1,6 +1,6 @@
 # bm_shell - ビットマップ転送型リモートシェルサーバー
 
-<div style="text-align:right">2026年9月30日</div>
+<div style="text-align:right">2026年10月13日</div>
 
 ## 概要
 
@@ -19,9 +19,14 @@ SSH [RFC 4250, RFC 4251, RFC 4253, RFC 4254, RFC 4255, RFC 4256]と異なる点�
 
 本ソフトウェアはaソースパッケージにて提供しています。以下をダウンロードしてください。
 
-- [bm_shell.20260930.tar.gz](http://akino-yo.f5.si/akinoyonika/bm_shell/bm_shell.20260930.tar.gz)
+- [bm_shell.20261013.tar.gz](http://akino-yo.f5.si/akinoyonika/bm_shell/bm_shell.20261013.tar.gz)
 
 <details><summary>変更履歴</summary>
+
+bm_shell.20261013.tar.gz
+: <ul>
+    <li>移植性向上のため、テスト用クライアントbm_termの表示部、キー入力部をメインから分離し、モジュール化した。</li>
+  </ul>
 
 bm_shell.20260930.tar.gz
 : <ul>

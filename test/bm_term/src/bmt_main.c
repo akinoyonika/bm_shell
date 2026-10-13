@@ -9,7 +9,8 @@
 #include <sys/eventfd.h>
 #include <signal.h>
 #include <time.h>
-#include <SDL2/SDL.h>
+#include "bmt/disp.h"
+#include "bmt/key.h"
 #include "bmt/main.h"
 
 static uint32_t _get_tick_us()
@@ -492,12 +493,7 @@ static int _bterm(int term_eventfd, int in_fd, int out_fd, struct _term_arg *arg
 	int const col_width = arg->cwpx;
 	int const rows = arg->rows;
 	int const cols = arg->cols;
-	SDL_Window *window;
-	SDL_Renderer *renderer;
-	SDL_Texture *texture;
 	int is_texture_dirty;
-	SDL_Event event[1];
-	pthread_t key_th;
 	struct pollfd fds[3];
 	uint8_t buffer[4]; // 4 = maximum command length
 	size_t buffer_size = 0;
@@ -587,7 +583,7 @@ static int _bterm(int term_eventfd, int in_fd, int out_fd, struct _term_arg *arg
 		int line_height, int col_width,
 		int *y, int *x, int *l,
 		uint8_t *bitmap, size_t *bitmap_size,
-		SDL_Renderer *renderer, SDL_Texture *texture, int *is_texture_dirty
+		int *is_texture_dirty
 	)
 	{
 		int i;
@@ -595,7 +591,6 @@ static int _bterm(int term_eventfd, int in_fd, int out_fd, struct _term_arg *arg
 		uint8_t r;
 		uint8_t g;
 		uint8_t b;
-		SDL_Rect rect[1];
 		switch (buffer[0] & 0b10000000) {
 		case 0b00000000:
 			*l = (((*l) << 7) | ((int)(buffer[0]) & 0b01111111)) + 1;
@@ -627,11 +622,7 @@ static int _bterm(int term_eventfd, int in_fd, int out_fd, struct _term_arg *arg
 				bitmap[j++] = b;
 				*bitmap_size += 3;
 				if (*bitmap_size == (line_height * col_width * 3)) {
-					rect->x = *x * col_width;
-					rect->y = *y * line_height;
-					rect->w = col_width;
-					rect->h = line_height;
-					SDL_UpdateTexture(texture, rect, bitmap, col_width * 3);
+					bmt_disp->update(*x * col_width, *y * line_height, col_width, line_height, bitmap);
 					*is_texture_dirty = 1;
 					*bitmap_size = 0;
 					(*x)++;
@@ -681,17 +672,11 @@ static int _bterm(int term_eventfd, int in_fd, int out_fd, struct _term_arg *arg
 								default:
 									switch (buffer[0] & 0b11111111) {
 									case 0b11111110:
-										i = open("/dev/tty", O_WRONLY);
-										if (i != -1) {
-											_write(i, (uint8_t *)"\a", 1);
-											fsync(i);
-											close(i);
-										}
+										bmt_disp->ring();
 										break;
 									default:
 										if (*is_texture_dirty) {
-											SDL_RenderCopy(renderer, texture, NULL, NULL);
-											SDL_RenderPresent(renderer);
+											bmt_disp->present();
 											*is_texture_dirty = 0;
 										}
 										if (0 < *bitmap_size) {
@@ -722,236 +707,33 @@ static int _bterm(int term_eventfd, int in_fd, int out_fd, struct _term_arg *arg
 			break;
 		}
 	}
-	struct key_arg {
-		int term_event_type;
+	struct key_write_arg {
 		int out_fd;
 		int winexp_eventfd;
-	} key_arg[1];
-	void *key(void *param)
+	} key_write_arg[1];
+	void key_write(uint8_t const *buffer, size_t buffer_size, void *param)
 	{
-		struct key_arg *arg = (struct key_arg *)param;
-		int is_running = 1;
-		SDL_Event event[1];
+		struct key_write_arg *arg = (struct key_write_arg *)param;
 		uint64_t const se = 1;
-		while (is_running) {
-			if (!SDL_WaitEvent(event)) continue;
-			if (event->type == arg->term_event_type) is_running = 0;
-			if (
-				(event->type == SDL_WINDOWEVENT) &&
-				(event->window.event == SDL_WINDOWEVENT_EXPOSED)
-			) {
-				_write(arg->winexp_eventfd, (uint8_t *)&se, sizeof(se));
-			}
-			if (event->type == SDL_TEXTINPUT) {
-				_write(arg->out_fd, (uint8_t *)(event->text.text), strlen(event->text.text));
-			}
-			if (event->type == SDL_KEYDOWN) {
-				char *s;
-				switch (event->key.keysym.sym) {
-				case SDLK_BACKSPACE:
-					s = "\x08";
-					break;
-				case SDLK_TAB:
-					s = "\x09";
-					break;
-				case SDLK_RETURN:
-				case SDLK_KP_ENTER:
-					s = "\x0d";
-					break;
-				case SDLK_ESCAPE:
-					s = "\x1b";
-					break;
-				case SDLK_INSERT:
-					s = "\x1b[2~";
-					break;
-				case SDLK_DELETE:
-					s = "\x1b[3~";
-					break;
-				case SDLK_HOME:
-					s = "\x1b[H";
-					break;
-				case SDLK_END:
-					s = "\x1b[F";
-					break;
-				case SDLK_PAGEUP:
-					s = "\x1b[5~";
-					break;
-				case SDLK_PAGEDOWN:
-					s = "\x1b[6~";
-					break;
-				case SDLK_UP:
-					s = "\x1b[A";
-					break;
-				case SDLK_DOWN:
-					s = "\x1b[B";
-					break;
-				case SDLK_RIGHT:
-					s = "\x1b[C";
-					break;
-				case SDLK_LEFT:
-					s = "\x1b[D";
-					break;
-				case SDLK_F1:
-					s = "\x1b[OP";
-					break;
-				case SDLK_F2:
-					s = "\x1b[OQ";
-					break;
-				case SDLK_F3:
-					s = "\x1b[OR";
-					break;
-				case SDLK_F4:
-					s = "\x1b[OS";
-					break;
-				case SDLK_F5:
-					s = "\x1b[15~";
-					break;
-				case SDLK_F6:
-					s = "\x1b[17~";
-					break;
-				case SDLK_F7:
-					s = "\x1b[18~";
-					break;
-				case SDLK_F8:
-					s = "\x1b[19~";
-					break;
-				case SDLK_F9:
-					s = "\x1b[20~";
-					break;
-				case SDLK_F10:
-					s = "\x1b[21~";
-					break;
-				case SDLK_F11:
-					s = "\x1b[23~";
-					break;
-				case SDLK_F12:
-					s = "\x1b[24~";
-					break;
-				default:
-					s = "";
-					if (event->key.keysym.mod & KMOD_CTRL) {
-						switch (event->key.keysym.sym) {
-						case SDLK_a:
-							s = "\x01";
-							break;
-						case SDLK_b:
-							s = "\x02";
-							break;
-						case SDLK_c:
-							s = "\x03";
-							break;
-						case SDLK_d:
-							s = "\x04";
-							break;
-						case SDLK_e:
-							s = "\x05";
-							break;
-						case SDLK_f:
-							s = "\x06";
-							break;
-						case SDLK_g:
-							s = "\x07";
-							break;
-						case SDLK_h:
-							s = "\x08";
-							break;
-						case SDLK_i:
-							s = "\x09";
-							break;
-						case SDLK_j:
-							s = "\x0a";
-							break;
-						case SDLK_k:
-							s = "\x0b";
-							break;
-						case SDLK_l:
-							s = "\x0c";
-							break;
-						case SDLK_m:
-							s = "\x0d";
-							break;
-						case SDLK_n:
-							s = "\x0e";
-							break;
-						case SDLK_o:
-							s = "\x0f";
-							break;
-						case SDLK_p:
-							s = "\x10";
-							break;
-						case SDLK_q:
-							s = "\x11";
-							break;
-						case SDLK_r:
-							s = "\x12";
-							break;
-						case SDLK_s:
-							s = "\x13";
-							break;
-						case SDLK_t:
-							s = "\x14";
-							break;
-						case SDLK_u:
-							s = "\x15";
-							break;
-						case SDLK_v:
-							s = "\x16";
-							break;
-						case SDLK_w:
-							s = "\x17";
-							break;
-						case SDLK_x:
-							s = "\x18";
-							break;
-						case SDLK_y:
-							s = "\x19";
-							break;
-						case SDLK_z:
-							s = "\x1a";
-							break;
-						default:
-							s = "";
-							break;
-						}
-					}
-					break;
-				}
-				_write(arg->out_fd, (uint8_t *)s, strlen(s));
-			}
+		if (0 < buffer_size) {
+			_write(arg->out_fd, buffer, buffer_size);
+		} else {
+			_write(arg->winexp_eventfd, (uint8_t *)&se, sizeof(se));
 		}
-		return NULL;
 	}
 
-	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-		goto SDL_INIT_FAILURE_EXIT;
+	if (bmt_disp->begin(col_width * cols, line_height * rows) != 0) {
+		goto BMT_DISP_BEGIN_FAILURE_EXIT;
 	}
-
-	window = SDL_CreateWindow("bm_term", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, col_width * cols, line_height * rows, 0);
-	if (window == NULL) {
-		goto SDL_CREATE_WINDOW_FAILURE_EXIT;
-	}
-	renderer = SDL_CreateRenderer(window, -1, 0);
-	if (renderer == NULL) {
-		goto SDL_CREATE_RENDERER_FAILURE_EXIT;
-	}
-	texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_TARGET, col_width * cols, line_height * rows);
-	if (texture == NULL) {
-		goto SDL_CREATE_TEXTURE_FAILURE_EXIT;
-	}
-	SDL_StartTextInput();
 	is_texture_dirty = 0;
 
-	key_arg->term_event_type = SDL_RegisterEvents(1);
-	if (key_arg->term_event_type == 0xffffffff) {
-		goto SDL_REGISTER_EVENT_FAILURE_EXIT;
-	}
-	key_arg->winexp_eventfd = eventfd(0, EFD_NONBLOCK);
-	if (key_arg->winexp_eventfd == -1) {
+	key_write_arg->winexp_eventfd = eventfd(0, EFD_NONBLOCK);
+	if (key_write_arg->winexp_eventfd == -1) {
 		goto WINEXP_EVENTFD_FAILURE_EXIT;
 	}
-	key_arg->out_fd = out_fd;
-	if (pthread_create(&key_th, NULL, key, key_arg) != 0) {
-		goto PTHREAD_CREATE_FAILURE_EXIT;
+	key_write_arg->out_fd = out_fd;
+	if (bmt_key->begin(key_write, key_write_arg) != 0) {
+		goto BMT_KEY_BEGIN_FAILURE_EXIT;
 	}
 
 	is_running = 1;
@@ -962,7 +744,7 @@ static int _bterm(int term_eventfd, int in_fd, int out_fd, struct _term_arg *arg
 			(fds + 0)->fd = term_eventfd;
 			(fds + 0)->events = POLLIN;
 			(fds + 0)->revents = 0;
-			(fds + 1)->fd = key_arg->winexp_eventfd;
+			(fds + 1)->fd = key_write_arg->winexp_eventfd;
 			(fds + 1)->events = POLLIN;
 			(fds + 1)->revents = 0;
 			(fds + 2)->fd = in_fd;
@@ -1012,39 +794,26 @@ static int _bterm(int term_eventfd, int in_fd, int out_fd, struct _term_arg *arg
 				line_height, col_width,
 				&y, &x, &l,
 				bitmap, &bitmap_size,
-				renderer, texture, &is_texture_dirty
+				&is_texture_dirty
 			);
 			buffer_size = 0;
 			expect_buffer_size = 0;
 		}
 
-		if ((_read(key_arg->winexp_eventfd, (uint8_t *)&re, sizeof(re)) == sizeof(re)) && is_texture_dirty) {
-			SDL_RenderCopy(renderer, texture, NULL, NULL);
-			SDL_RenderPresent(renderer);
+		if ((_read(key_write_arg->winexp_eventfd, (uint8_t *)&re, sizeof(re)) == sizeof(re)) && is_texture_dirty) {
+			bmt_disp->present();
 			is_texture_dirty = 0;
 		}
 
 		if (_read(term_eventfd, (uint8_t *)&re, sizeof(re)) == sizeof(re)) is_running = 0;
 	}
 
-	SDL_zero(*event);
-	event->type = key_arg->term_event_type;
-	SDL_PushEvent(event);
-	pthread_join(key_th, NULL);
-PTHREAD_CREATE_FAILURE_EXIT:
-	close(key_arg->winexp_eventfd);
+	bmt_key->end();
+BMT_KEY_BEGIN_FAILURE_EXIT:
+	close(key_write_arg->winexp_eventfd);
 WINEXP_EVENTFD_FAILURE_EXIT:
-SDL_REGISTER_EVENT_FAILURE_EXIT:
-	SDL_StopTextInput();
-	SDL_DestroyTexture(texture);
-SDL_CREATE_TEXTURE_FAILURE_EXIT:	
-	SDL_DestroyRenderer(renderer);
-SDL_CREATE_RENDERER_FAILURE_EXIT:
-	SDL_DestroyWindow(window);
-SDL_CREATE_WINDOW_FAILURE_EXIT:
-
-	SDL_Quit();
-SDL_INIT_FAILURE_EXIT:
+	bmt_disp->end();
+BMT_DISP_BEGIN_FAILURE_EXIT:
 
 	return is_running;
 }

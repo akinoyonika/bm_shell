@@ -35,5 +35,7 @@ depend:
 
 # DO NOT DELETE
 
-src/bmt_main.o: include/bmt/main.h
+src/bmt_disp.o: include/bmt/disp.h
+src/bmt_key.o: include/bmt/key.h
+src/bmt_main.o: include/bmt/disp.h include/bmt/key.h include/bmt/main.h
 src/main.o: include/bmt/main.h
