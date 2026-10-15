@@ -21,5 +21,6 @@
 !*.c
 !Makefile
 !README.md
+!LICENSE
 !bm_shell.sh
 !bm_term.sh

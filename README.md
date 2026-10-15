@@ -1,6 +1,6 @@
 # bm_shell - ビットマップ転送型リモートシェルサーバー
 
-<div style="text-align:right">2026年10月13日</div>
+<div style="text-align:right">2026年10月15日</div>
 
 ## 概要
 
@@ -17,11 +17,16 @@ SSH [RFC 4250, RFC 4251, RFC 4253, RFC 4254, RFC 4255, RFC 4256]と異なる点�
 
 ## パッケージ
 
-本ソフトウェアはaソースパッケージにて提供しています。以下をダウンロードしてください。
+本ソフトウェアはソースパッケージにて提供しています。以下をダウンロードしてください。
 
-- [bm_shell.20261013.tar.gz](http://akino-yo.f5.si/akinoyonika/bm_shell/bm_shell.20261013.tar.gz)
+- [bm_shell.20261015.tar.gz](http://akino-yo.f5.si/akinoyonika/bm_shell/bm_shell.20261015.tar.gz)
 
 <details><summary>変更履歴</summary>
+
+bm_shell.20261015.tar.gz
+: <ul>
+    <li>パッケージにLICENSEファイルを追加した。</li>
+  </ul>
 
 bm_shell.20261013.tar.gz
 : <ul>
@@ -222,7 +227,7 @@ linuxのGUI環境で動作するbm_termは実用的ではありません。
 
 MITライセンスに基づいてリリースされています。
 
-<details><summary>Copyright 2026 akinoyonika</summary>
+<details><summary>Copyright (c) 2026 akinoyonika</summary>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -231,4 +236,3 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 </details>
-
